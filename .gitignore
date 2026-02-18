@@ -1,0 +1,89 @@
+# ========================
+# Python / Flask Backend
+# ========================
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Uploaded images (temporary files)
+backend/uploads/
+
+# Trained model weights (use Git LFS or cloud storage)
+backend/model/*.pt
+backend/model/*.h5
+backend/model/*.pkl
+backend/model/*.weights
+
+# Flask instance folder
+instance/
+
+# ========================
+# Flutter / Dart Frontend
+# ========================
+frontend/braille_app/.dart_tool/
+frontend/braille_app/.flutter-plugins
+frontend/braille_app/.flutter-plugins-dependencies
+frontend/braille_app/.packages
+frontend/braille_app/build/
+frontend/braille_app/pubspec.lock
+*.g.dart
+
+# Android
+frontend/braille_app/android/local.properties
+frontend/braille_app/android/key.properties
+frontend/braille_app/android/app/google-services.json
+*.jks
+*.keystore
+
+# iOS
+frontend/braille_app/ios/Runner/GoogleService-Info.plist
+frontend/braille_app/ios/Pods/
+frontend/braille_app/ios/.symlinks/
+
+# ========================
+# IDE & Editor Files
+# ========================
+.vscode/
+.idea/
+*.iml
+*.suo
+*.user
+*.swp
+*.swo
+
+# ========================
+# OS Generated Files
+# ========================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+npm-debug.log*
+
+# ========================
+# Misc
+# ========================
+*.zip
+*.tar.gz
+.cache/
