@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braille API Tester</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #7c6af7;
+            margin-bottom: 6px;
+        }
+
+        p.subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed #3a3a5c;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover { border-color: #7c6af7; }
+
+        .upload-area input { display: none; }
+
+        .upload-area .icon { font-size: 40px; margin-bottom: 10px; }
+
+        .upload-area p { color: #888; font-size: 14px; }
+
+        .upload-area p span { color: #7c6af7; }
+
+        #preview {
+            display: none;
+            width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #2a2a4a;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #7c6af7;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: #6a58e0; }
+        button:disabled { background: #3a3a5c; cursor: not-allowed; }
+
+        .result {
+            display: none;
+            margin-top: 24px;
+            padding: 20px;
+            background: #0f0f1a;
+            border-radius: 10px;
+            border: 1px solid #2a2a4a;
+        }
+
+        .result .label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .result .value {
+            font-size: 18px;
+            color: #e0e0e0;
+            margin-bottom: 16px;
+            word-break: break-word;
+        }
+
+        .result .value.highlight {
+            color: #7c6af7;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .status.success { background: #1a3a2a; color: #4caf84; }
+        .status.error { background: #3a1a1a; color: #f47474; }
+
+        .spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+
+        .raw { font-size: 14px; color: #aaa; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔵 Braille API Tester</h1>
+        <p class="subtitle">Upload a braille image to test the backend pipeline</p>
+
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+            <div class="icon">📷</div>
+            <p>Click to upload a braille image<br><span>JPG, PNG supported</span></p>
+        </div>
+
+        <img id="preview" alt="Preview">
+
+        <button id="convertBtn" onclick="convert()" disabled>Convert Braille</button>
+
+        <div class="spinner" id="spinner">⏳ Processing...</div>
+
+        <div class="result" id="result">
+            <div id="statusBadge"></div>
+            <div class="label">Corrected Text (LLM)</div>
+            <div class="value highlight" id="correctedText"></div>
+            <div class="label">Raw Detected Letters</div>
+            <div class="value raw" id="rawText"></div>
+            <div class="label">Characters Detected</div>
+            <div class="value" id="charCount"></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        function handleFile(event) {
+            selectedFile = event.target.files[0];
+            if (!selectedFile) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('preview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(selectedFile);
+
+            document.getElementById('convertBtn').disabled = false;
+            document.getElementById('result').style.display = 'none';
+        }
+
+        async function convert() {
+            if (!selectedFile) return;
+
+            const btn = document.getElementById('convertBtn');
+            const spinner = document.getElementById('spinner');
+            const result = document.getElementById('result');
+
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            result.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                spinner.style.display = 'none';
+                result.style.display = 'block';
+
+                if (data.success) {
+                    document.getElementById('statusBadge').innerHTML = '<span class="status success">✅ Success</span>';
+                    document.getElementById('correctedText').textContent = data.corrected_text || '(no correction)';
+                    document.getElementById('rawText').textContent = data.raw_text || '(empty)';
+                    document.getElementById('charCount').textContent = data.character_count || 0;
+                } else {
+                    document.getElementById('statusBadge').innerHTML = '<span class="status error">❌ Failed</span>';
+                    document.getElementById('correctedText').textContent = data.error || 'Unknown error';
+                    document.getElementById('rawText').textContent = '-';
+                    document.getElementById('charCount').textContent = '0';
+                }
+
+            } catch (err) {
+                spinner.style.display = 'none';
+                result.style.display = 'block';
+                document.getElementById('statusBadge').innerHTML = '<span class="status error">❌ Connection Error</span>';
+                document.getElementById('correctedText').textContent = 'Could not connect to Flask server. Make sure it is running on port 5000.';
+                document.getElementById('rawText').textContent = '-';
+                document.getElementById('charCount').textContent = '0';
+            }
+
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
